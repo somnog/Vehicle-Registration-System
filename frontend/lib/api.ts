@@ -53,6 +53,8 @@ export const registrationsApi = {
     data: CreateRegistrationRequest
   ): Promise<VehicleRegistration> => {
     const response = await apiClient.post("/api/registrations", data);
+    console.log(response);
+    
     return response.data;
   },
 

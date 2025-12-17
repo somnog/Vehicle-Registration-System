@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateRegistrationDto } from './create-registration.dto';
 import { UpdateRegistrationStatusDto } from './update-registration-status.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class RegistrationsService {
@@ -106,26 +107,26 @@ export class RegistrationsService {
   }
 
   async updateStatus(id: string, dto: UpdateRegistrationStatusDto) {
-    const registration = await this.prisma.vehicleRegistration.findUnique({
-      where: { id },
-    });
-
-    if (!registration) {
-      throw new NotFoundException('Vehicle registration not found');
+    try {
+      return await this.prisma.vehicleRegistration.update({
+        where: { id },
+        data: {
+          status: dto.status,
+          reviewedAt: new Date(),
+          rejectionReason: dto.rejectionReason ?? null,
+        },
+        include: { user: true, vehicle: true, owner: true },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException('Vehicle registration not found');
+      }
+      throw error;
     }
 
-    return this.prisma.vehicleRegistration.update({
-      where: { id },
-      data: {
-        status: dto.status,
-        reviewedAt: new Date(),
-        rejectionReason: dto.rejectionReason ?? null,
-      },
-      include: {
-        user: true,
-        vehicle: true,
-        owner: true,
-      },
-    });
+    
   }
 }
